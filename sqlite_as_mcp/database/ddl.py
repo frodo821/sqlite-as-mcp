@@ -1,3 +1,4 @@
+from typing import Literal
 from pydantic import BaseModel, Field, RootModel
 
 
@@ -172,6 +173,15 @@ class Index(BaseModel):
 
 
 class CreateTable(BaseModel):
+  action: Literal['create_table'] = Field(
+    'create_table',
+    title='action',
+    description=(
+      'The action to perform. '
+      'For example, the action like "create_table".'
+    ),
+  )
+
   table_name: str = Field(
     ...,
     title='table name',
@@ -244,6 +254,15 @@ class DropTable(BaseModel):
   Drop table statement.
   """
 
+  action: Literal['drop_table'] = Field(
+    'drop_table',
+    title='action',
+    description=(
+      'The action to perform. '
+      'For example, the action like "drop_table".'
+    ),
+  )
+
   table_name: str = Field(
     ...,
     title='table name',
@@ -264,6 +283,15 @@ class RenameTable(BaseModel):
   """
   Rename table statement.
   """
+
+  action: Literal['rename_table'] = Field(
+    'rename_table',
+    title='action',
+    description=(
+      'The action to perform. '
+      'For example, the action like "rename_table".'
+    ),
+  )
 
   old_name: str = Field(
     ...,
