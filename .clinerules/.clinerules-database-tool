@@ -1,56 +1,22 @@
-from contextlib import asynccontextmanager
-from dataclasses import dataclass
-from typing import Any, AsyncGenerator, Literal
-from mcp.server.fastmcp.exceptions import ToolError
-from mcp.server.fastmcp.utilities.types import Image
-from mcp.server.fastmcp import Context, FastMCP
-from pydantic import BaseModel
-
-from sqlite_as_mcp.database.ddl import SQLiteDDL
-from sqlite_as_mcp.database.sqlite import SQLiteDatabase, SQLiteObject
-
-
-@dataclass
-class AppContext:
-  db: SQLiteDatabase
-
-
-class SQLiteMCPServerArgs(BaseModel):
-  database_path: str = "sqlite.db"
-  server_name: str = "SQLite MCP Server"
-  server_port: int = 8000
-  server_host: str = "localhost"
-  mode: Literal['sse', 'stdio'] = 'sse'
-
-
-def create_server(args: SQLiteMCPServerArgs) -> FastMCP:
-
-  @asynccontextmanager
-  async def lifespan(server: FastMCP) -> 'AsyncGenerator[AppContext, Any]':
-    """Get the application context."""
-    db = SQLiteDatabase(args.database_path)
-    try:
-      yield AppContext(db)
-    finally:
-      db.close()
-
-  mcp = FastMCP(
-    name=args.server_name,
-    lifespan=lifespan,
-    host=args.server_host,
-    port=args.server_port,
-    instructions="""<sqlite_tool_info>
 # Database Tools Manual
 
 This document explains how to use the available database tools. The current system supports SQLite databases.
 
 ## Table of Contents
 
-1. [Retrieving Database Information](#retrieving-database-information)
-2. [Executing DDL Statements](#executing-ddl-statements)
-3. [Executing DML Statements](#executing-dml-statements)
-4. [Executing SELECT Statements](#executing-select-statements)
-5. [Usage Examples](#usage-examples)
+1. [Database Tools Manual](#database-tools-manual)
+   1. [Table of Contents](#table-of-contents)
+   2. [Retrieving Database Information](#retrieving-database-information)
+      1. [describe\_database](#describe_database)
+   3. [Executing DDL Statements](#executing-ddl-statements)
+      1. [run\_ddl](#run_ddl)
+   4. [Executing DML Statements](#executing-dml-statements)
+      1. [write\_database](#write_database)
+   5. [Executing SELECT Statements](#executing-select-statements)
+      1. [select](#select)
+   6. [Usage Examples](#usage-examples)
+      1. [Creating and Working with a New Table](#creating-and-working-with-a-new-table)
+      2. [Error Handling](#error-handling)
 
 ## Retrieving Database Information
 
@@ -309,90 +275,3 @@ If an error occurs during database operations, an error message will be returned
 - Foreign key constraint violation
 
 If these errors occur, check the error message and handle accordingly.
-</sqlite_tool_info>"""
-  )
-
-  @mcp.tool()
-  def describe_database(ctx: Context) -> list[SQLiteObject]:
-    """Describe the current database."""
-    db: SQLiteDatabase = ctx.request_context.lifespan_context.db
-    return db.describe_all()
-
-  @mcp.tool()
-  def run_ddl(ctx: Context, ddl: SQLiteDDL):
-    """Run DDL statement on the current database."""
-    db: SQLiteDatabase = ctx.request_context.lifespan_context.db
-    try:
-      return db.run_ddl(ddl.root)
-    except Exception as e:
-      raise ToolError(f"Failed to run DDL statement: {e}") from e
-
-  @mcp.tool()
-  def write_database(ctx: Context, sql: str) -> list[dict[str, Any]] | None:
-    """Run a modification (i.e. create, update, delete) SQL statement.
-    This tool can run a sql script that contains multiple statements.
-
-    Please note that this tool cannot run DDL statements, only can run DML statements.
-
-    Also, this tool returns only the last statement result.
-    For example, if you run a sql script that contains multiple statements with multiple results, but only the last statement result will be returned.
-    """
-    db: SQLiteDatabase = ctx.request_context.lifespan_context.db
-
-    try:
-      return db.run_modification(sql)
-    except Exception as e:
-      raise ToolError(f"Failed to run SQL statement: {e}") from e
-
-  @mcp.tool()
-  def select(ctx: Context, sql: str) -> list[dict[str, Any]]:
-    """Run a select SQL statement."""
-    db: SQLiteDatabase = ctx.request_context.lifespan_context.db
-    try:
-      return db.select(sql)
-    except Exception as e:
-      raise ToolError(f"Failed to run SQL statement: {e}") from e
-
-  return mcp
-
-
-def main():
-  import argparse
-  parser = argparse.ArgumentParser(description="SQLite MCP Server")
-  parser.add_argument(
-    "--database-path",
-    type=str,
-    default="sqlite.db",
-    help="Path to the SQLite database file.",
-  )
-  parser.add_argument(
-    "--server-name",
-    type=str,
-    default="SQLite MCP Server",
-    help="Name of the server.",
-  )
-  parser.add_argument(
-    "--server-port",
-    type=int,
-    default=8000,
-    help="Port of the server.",
-  )
-  parser.add_argument(
-    "--server-host",
-    type=str,
-    default="localhost",
-    help="Host of the server.",
-  )
-  parser.add_argument(
-    "--mode",
-    type=str,
-    choices=[
-      'sse',
-      'stdio',
-    ],
-    default='sse',
-    help="Mode of the server.",
-  )
-  args = SQLiteMCPServerArgs(**vars(parser.parse_args()))
-  mcp = create_server(args)
-  mcp.run(transport=args.mode)
