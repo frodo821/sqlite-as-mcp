@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from json import dumps
 from typing import Any, AsyncGenerator, Literal
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.fastmcp.utilities.types import Image
@@ -316,7 +317,8 @@ If these errors occur, check the error message and handle accordingly.
   def describe_database(ctx: Context) -> list[SQLiteObject]:
     """Describe the current database."""
     db: SQLiteDatabase = ctx.request_context.lifespan_context.db
-    return db.describe_all()
+    data = db.describe_all()
+    return dumps([d.model_dump() for d in data], ensure_ascii=False)  # type: ignore
 
   @mcp.tool()
   def run_ddl(ctx: Context, ddl: SQLiteDDL):
@@ -340,7 +342,7 @@ If these errors occur, check the error message and handle accordingly.
     db: SQLiteDatabase = ctx.request_context.lifespan_context.db
 
     try:
-      return db.run_modification(sql)
+      return dumps(db.run_modification(sql), ensure_ascii=False)  # type: ignore
     except Exception as e:
       raise ToolError(f"Failed to run SQL statement: {e}") from e
 
@@ -349,7 +351,7 @@ If these errors occur, check the error message and handle accordingly.
     """Run a select SQL statement."""
     db: SQLiteDatabase = ctx.request_context.lifespan_context.db
     try:
-      return db.select(sql)
+      return dumps(db.select(sql), ensure_ascii=False)  # type: ignore
     except Exception as e:
       raise ToolError(f"Failed to run SQL statement: {e}") from e
 
