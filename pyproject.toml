@@ -1,0 +1,35 @@
+[project]
+name = "sqlite-as-mcp"
+version = "0.1.0"
+description = "SQLite as a MCP (Model Context Protocol) server"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["mcp[cli]>=1.6.0"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "pytest-xdist>=3.6.1",
+    "yapf>=0.43.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.yapf]
+based_on_style = "google"
+column_limit = 96
+indent_width = 2
+continuation_indent_width = 2
+split_before_closing_bracket = true
+split_before_first_argument = true
+dedent_closing_brackets = true
+coalesce_brackets = true
+arithmetic_precedence_indication = true
+split_arguments_when_comma_terminated = true
+split_all_comma_separated_values = true
+allow_split_before_dict_value = false
+
+[tool.pytest.ini_options]
+addopts = "-n auto"
