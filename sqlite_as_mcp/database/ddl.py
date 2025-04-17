@@ -318,7 +318,141 @@ class RenameTable(BaseModel):
     return f"ALTER TABLE {self.old_name} RENAME TO {self.new_name};"
 
 
-type DDL = CreateTable | DropTable | RenameTable
+class CreateIndex(BaseModel):
+  """
+  Create index statement.
+  """
+
+  action: Literal['create_index'] = Field(
+    'create_index',
+    title='action',
+    description=(
+      'The action to perform. '
+      'For example, the action like "create_index".'
+    ),
+  )
+
+  index: Index = Field(
+    ...,
+    title='index',
+    description=(
+      'The index to create. '
+      'For example, the index like Index(name="idx_users_id", table="users", columns=["id"]).'
+    ),
+  )
+
+  def to_sql(self) -> str:
+    """
+    Convert the create index statement to SQL statement.
+    """
+    return self.index.to_sql()
+
+
+class DropIndex(BaseModel):
+  """
+  Drop index statement.
+  """
+
+  action: Literal['drop_index'] = Field(
+    'drop_index',
+    title='action',
+    description=(
+      'The action to perform. '
+      'For example, the action like "drop_index".'
+    ),
+  )
+
+  index_name: str = Field(
+    ...,
+    title='index name',
+    description=(
+      'The name of the index to drop. '
+      'For example, the name of the index like "idx_users_id".'
+    ),
+  )
+
+  def to_sql(self) -> str:
+    """
+    Convert the drop index statement to SQL statement.
+    """
+    return f"DROP INDEX {self.index_name};"
+
+
+class CreateView(BaseModel):
+  """
+  Create view statement.
+  """
+
+  action: Literal['create_view'] = Field(
+    'create_view',
+    title='action',
+    description=(
+      'The action to perform. '
+      'For example, the action like "create_view".'
+    ),
+  )
+
+  view_name: str = Field(
+    ...,
+    title='view name',
+    description=(
+      'The name of the view to create. '
+      'For example, the name of the view like "users_view".'
+    ),
+  )
+
+  sql: str = Field(
+    ...,
+    title='SQL statement',
+    description=(
+      'The SQL statement to create the view. '
+      'For example, the SQL statement like "SELECT * FROM users".'
+    ),
+  )
+
+  def to_sql(self) -> str:
+    """
+    Convert the create view statement to SQL statement.
+    """
+    sql = self.sql.strip()
+
+    if sql.endswith(';'):
+      sql = sql[:-1].strip()
+
+    return f"CREATE VIEW {self.view_name} AS {sql};"
+
+
+class DropView(BaseModel):
+  """
+  Drop view statement.
+  """
+
+  action: Literal['drop_view'] = Field(
+    'drop_view',
+    title='action',
+    description=(
+      'The action to perform. '
+      'For example, the action like "drop_view".'
+    ),
+  )
+
+  view_name: str = Field(
+    ...,
+    title='view name',
+    description=(
+      'The name of the view to drop. '
+      'For example, the name of the view like "users_view".'
+    ),
+  )
+
+  def to_sql(self) -> str:
+    """
+    Convert the drop view statement to SQL statement.
+    """
+    return f"DROP VIEW {self.view_name};"
+
+
+type DDL = CreateTable | DropTable | RenameTable | CreateIndex | DropIndex | CreateView | DropView
 
 class SQLiteDDL(RootModel[list[DDL]]):
   pass
