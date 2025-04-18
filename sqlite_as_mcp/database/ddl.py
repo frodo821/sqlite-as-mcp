@@ -22,6 +22,14 @@ class Column(BaseModel):
     description=('The data type of the column. '
                  'For example, the data type like "INTEGER".'),
   )
+  primary_key: bool = Field(
+    False,
+    title='is primary key',
+    description=(
+      'Whether the column is a primary key. '
+      'For example, if the column is a primary key, this will be True.'
+    ),
+  )
   unique: bool = Field(
     False,
     title='is unique',
@@ -66,6 +74,8 @@ class Column(BaseModel):
       sql += " NOT NULL"
     if self.default is not None:
       sql += f" DEFAULT {self.default}"
+    if self.primary_key:
+      sql += " PRIMARY KEY"
     if self.comment is not None:
       sql = f"-- {self.name}: {self.comment}\n{sql}"
     return indent(sql, 1)
