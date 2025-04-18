@@ -241,7 +241,7 @@ class CreateTable(BaseModel):
     """
     Convert the create table statement to SQL statement.
     """
-    sql = f"CREATE TABLE {self.table_name} ("
+    sql = f"CREATE TABLE {self.table_name} (\n"
 
     if self.comment is not None:
       sql = f"-- {self.table_name}: {self.comment}\n{sql}"
